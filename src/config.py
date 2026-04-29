@@ -1,0 +1,6 @@
+DEFAULT_TICKERS = ["AAPL", "MSFT", "GOOGL", "SPY"]
+
+START_DATE = "2020-01-01"
+END_DATE = "2026-04-01"
+
+RAW_MARKET_DATA_PATH = "data/raw/raw_market_data.csv"
