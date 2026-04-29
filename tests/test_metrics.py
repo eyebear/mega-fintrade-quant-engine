@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from quantfolio_showcase.metrics import cumulative_returns, max_drawdown, summarize_metrics
+from src.metrics import cumulative_returns, max_drawdown, summarize_metrics
 
 
 def test_cumulative_returns_starts_at_one_plus_first_return() -> None:
