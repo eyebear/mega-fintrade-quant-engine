@@ -80,3 +80,15 @@ class RelativeStrengthStrategy:
             frames.append(asset_frame)
 
         return pd.concat(frames, axis=1)
+
+@dataclass
+class ZScoreStrategy:
+    lookback: int = 20
+    entry_threshold: float = -1.0
+    exit_threshold: float = 0.0
+
+    def calculate_rolling_mean(self, prices: pd.DataFrame) -> pd.DataFrame:
+        return prices.rolling(
+            window=self.lookback,
+            min_periods=self.lookback
+        ).mean()

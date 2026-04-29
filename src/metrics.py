@@ -44,6 +44,16 @@ def max_drawdown(returns: pd.Series) -> float:
     drawdown = wealth / running_max - 1.0
     return float(drawdown.min()) if not drawdown.empty else 0.0
 
+def hit_rate(returns: pd.Series) -> float:
+    if returns.empty:
+        return 0.0
+
+    non_zero_returns = returns[returns != 0.0]
+
+    if non_zero_returns.empty:
+        return 0.0
+
+    return float((non_zero_returns > 0.0).mean())
 
 def summarize_metrics(returns: pd.Series, average_turnover: float | None = None) -> pd.Series:
     summary = {
@@ -52,7 +62,9 @@ def summarize_metrics(returns: pd.Series, average_turnover: float | None = None)
         "annualized_volatility": annualized_volatility(returns),
         "sharpe_ratio": sharpe_ratio(returns),
         "max_drawdown": max_drawdown(returns),
+        "hit_rate": hit_rate(returns),
     }
     if average_turnover is not None:
         summary["average_daily_turnover"] = float(average_turnover)
     return pd.Series(summary)
+
