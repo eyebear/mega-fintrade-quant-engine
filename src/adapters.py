@@ -31,3 +31,21 @@ def prepare_backtest_dataframe(cleaned_market_data: pd.DataFrame) -> pd.DataFram
     df = df.sort_values(["symbol", "date"]).reset_index(drop=True)
 
     return df
+
+def convert_to_price_matrix(backtest_data: pd.DataFrame) -> pd.DataFrame:
+    df = backtest_data.copy()
+
+    required_columns = ["symbol", "date", "close"]
+    for column in required_columns:
+        if column not in df.columns:
+            raise ValueError(f"Missing required column: {column}")
+
+    df["date"] = pd.to_datetime(df["date"])
+
+    price_matrix = df.pivot(
+        index="date",
+        columns="symbol",
+        values="close"
+    ).sort_index()
+
+    return price_matrix
