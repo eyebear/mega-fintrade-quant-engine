@@ -92,3 +92,59 @@ class ZScoreStrategy:
             window=self.lookback,
             min_periods=self.lookback
         ).mean()
+    
+    def calculate_rolling_std(self, prices: pd.DataFrame) -> pd.DataFrame:
+        return prices.rolling(
+            window=self.lookback,
+            min_periods=self.lookback
+        ).std()
+    
+    def calculate_zscore(self, prices: pd.DataFrame) -> pd.DataFrame:
+        rolling_mean = self.calculate_rolling_mean(prices)
+        rolling_std = self.calculate_rolling_std(prices)
+
+        zscore = (prices - rolling_mean) / rolling_std
+
+        return zscore.replace([float("inf"), float("-inf")], 0.0).fillna(0.0)
+    
+    def generate_signals(self, prices: pd.DataFrame) -> pd.DataFrame:
+        zscore = self.calculate_zscore(prices)
+
+        signals = pd.DataFrame(0.0, index=prices.index, columns=prices.columns)
+
+        # Entry: buy when z-score < entry_threshold
+        signals[zscore < self.entry_threshold] = 1.0
+
+        # Exit: sell when z-score > exit_threshold
+        signals[zscore > self.exit_threshold] = 0.0
+
+        frames: list[pd.DataFrame] = []
+        for asset in prices.columns:
+            asset_frame = pd.DataFrame(
+                {
+                    (asset, "close"): prices[asset],
+                    (asset, "zscore"): zscore[asset],
+                    (asset, "signal"): signals[asset],
+                }
+            )
+            frames.append(asset_frame)
+
+        return pd.concat(frames, axis=1)
+    
+def export_zscore_signals(
+    prices: pd.DataFrame,
+    strategy: ZScoreStrategy,
+    output_path: str = "data/output/zscore_signals.csv"
+) -> pd.DataFrame:
+    import os
+
+    signals = strategy.generate_signals(prices)
+
+    os.makedirs("data/output", exist_ok=True)
+
+    flat = signals.copy()
+    flat.columns = [f"{col[0]}_{col[1]}" for col in flat.columns]
+
+    flat.to_csv(output_path)
+
+    return flat
