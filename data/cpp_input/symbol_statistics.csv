@@ -1,0 +1,4 @@
+symbol,return_count,average_return,min_return,max_return
+AAPL,1,0.003017,0.003017,0.003017
+GOOGL,1,0.005428,0.005428,0.005428
+MSFT,1,0.004800,0.004800,0.004800
