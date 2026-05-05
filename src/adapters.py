@@ -1,6 +1,7 @@
 import pandas as pd
+
 CLEANED_MARKET_DATA_COLUMNS = ["symbol", "date", "open", "high", "low", "close", "volume"]
-DAILY_RETURNS_COLUMNS = ["symbol", "date", "close", "previous_close", "daily_return"]
+DAILY_RETURNS_COLUMNS = ["symbol", "date", "previous_close", "current_close", "daily_return"]
 
 def read_cleaned_market_data(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path)
