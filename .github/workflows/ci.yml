@@ -48,6 +48,63 @@ jobs:
           mkdir -p data/output
           mkdir -p reports
 
+      - name: Generate sample processed input files
+        run: |
+          python - <<'PY'
+          from datetime import date, timedelta
+          from pathlib import Path
+
+          processed_dir = Path("data/processed")
+          processed_dir.mkdir(parents=True, exist_ok=True)
+
+          symbols = ["AAPL", "MSFT", "GOOGL", "SPY"]
+          start_date = date(2026, 1, 1)
+          number_of_days = 80
+
+          cleaned_path = processed_dir / "cleaned_market_data.csv"
+          returns_path = processed_dir / "daily_returns.csv"
+
+          with cleaned_path.open("w", encoding="utf-8") as file:
+              file.write("symbol,date,open,high,low,close,volume\n")
+
+              for symbol_index, symbol in enumerate(symbols):
+                  base_price = 100.0 + symbol_index * 25.0
+
+                  for day_index in range(number_of_days):
+                      current_date = start_date + timedelta(days=day_index)
+                      close_price = base_price + day_index * 0.5 + symbol_index
+                      open_price = close_price - 0.2
+                      high_price = close_price + 0.8
+                      low_price = close_price - 0.9
+                      volume = 1000000 + day_index * 1000 + symbol_index * 10000
+
+                      file.write(
+                          f"{symbol},{current_date.isoformat()},"
+                          f"{open_price:.2f},{high_price:.2f},{low_price:.2f},"
+                          f"{close_price:.2f},{volume}\n"
+                      )
+
+          with returns_path.open("w", encoding="utf-8") as file:
+              file.write("symbol,date,previous_close,current_close,daily_return\n")
+
+              for symbol_index, symbol in enumerate(symbols):
+                  base_price = 100.0 + symbol_index * 25.0
+
+                  for day_index in range(1, number_of_days):
+                      current_date = start_date + timedelta(days=day_index)
+                      previous_close = base_price + (day_index - 1) * 0.5 + symbol_index
+                      current_close = base_price + day_index * 0.5 + symbol_index
+                      daily_return = (current_close - previous_close) / previous_close
+
+                      file.write(
+                          f"{symbol},{current_date.isoformat()},"
+                          f"{previous_close:.2f},{current_close:.2f},{daily_return:.8f}\n"
+                      )
+
+          print(f"Generated {cleaned_path}")
+          print(f"Generated {returns_path}")
+          PY
+
       - name: Build Docker image
         run: |
           docker build -t mega-fintrade-quant-engine .
@@ -60,6 +117,9 @@ jobs:
         run: |
           test -f data/processed/cleaned_market_data.csv
           test -f data/processed/daily_returns.csv
+          ls -lh data/processed
+          head -n 5 data/processed/cleaned_market_data.csv
+          head -n 5 data/processed/daily_returns.csv
 
       - name: Run analytics pipeline inside Docker Compose
         run: |
