@@ -1,0 +1,102 @@
+# Phase 10.2 — Docker Ignore
+# Mega Fintrade Quant Engine
+#
+# This file keeps the Docker build context clean.
+# It prevents local Python environments, cache files, generated outputs,
+# reports, Git metadata, IDE files, and temporary files from being copied
+# into the Docker image.
+
+# Git
+.git
+.gitignore
+
+# GitHub workflow metadata is not required inside the runtime image
+.github
+
+# Python virtual environments
+.venv
+venv
+env
+ENV
+
+# Python cache files
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# pytest and coverage artifacts
+.pytest_cache
+**/.pytest_cache
+.coverage
+coverage.xml
+htmlcov
+
+# Build and packaging artifacts
+build
+dist
+*.egg-info
+.eggs
+pip-wheel-metadata
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Generated data outputs
+data/output
+data/output/*
+
+# Generated raw data can be large or environment-specific
+data/raw
+data/raw/*
+
+# Keep processed input folder available for Docker pipeline tests
+# Do not ignore data/processed because the pipeline may need:
+# data/processed/cleaned_market_data.csv
+# data/processed/daily_returns.csv
+
+# Generated reports
+reports/*
+!reports/.gitkeep
+
+# Logs
+logs
+logs/*
+*.log
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# IDE and editor files
+.vscode
+.idea
+*.code-workspace
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Jupyter files if notebooks are added later
+.ipynb_checkpoints
+
+# Docker Compose override files used only locally
+docker-compose.override.yml

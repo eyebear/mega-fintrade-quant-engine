@@ -7,7 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  python-test:
+    name: Native Python tests
     runs-on: ubuntu-latest
 
     steps:
@@ -28,4 +29,58 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest
+          python -m pytest
+
+  docker-build-test-and-run:
+    name: Docker build, test, and pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare runtime folders
+        run: |
+          mkdir -p data/processed
+          mkdir -p data/output
+          mkdir -p reports
+
+      - name: Build Docker image
+        run: |
+          docker build -t mega-fintrade-quant-engine .
+
+      - name: Run pytest inside Docker Compose
+        run: |
+          docker compose run --rm quant-engine-tests
+
+      - name: Check processed input files
+        run: |
+          test -f data/processed/cleaned_market_data.csv
+          test -f data/processed/daily_returns.csv
+
+      - name: Run analytics pipeline inside Docker Compose
+        run: |
+          docker compose run --rm quant-engine-pipeline
+
+      - name: Verify generated output files
+        run: |
+          test -f data/output/strategy_signals.csv
+          test -f data/output/backtest_results.csv
+          test -f data/output/risk_metrics.csv
+          test -f data/output/portfolio_equity_curve.csv
+
+      - name: Show generated output files
+        run: |
+          ls -lh data/output
+          head -n 5 data/output/strategy_signals.csv
+          head -n 5 data/output/backtest_results.csv
+          head -n 5 data/output/risk_metrics.csv
+          head -n 5 data/output/portfolio_equity_curve.csv
+
+      - name: Stop Docker Compose services
+        if: always()
+        run: |
+          docker compose down

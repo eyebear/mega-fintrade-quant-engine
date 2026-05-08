@@ -1,16 +1,214 @@
-## Integration with mega-fintrade-market-engine-cpp
+# mega-fintrade-quant-engine
 
-The `mega-fintrade-quant-engine` repository integrates with the C++ market data processing engine from `mega-fintrade-market-engine-cpp`.
+Python quantitative backtesting and analytics engine for the Mega Fintrade Platform.
 
-The `mega-fintrade-market-engine-cpp` repository is responsible for cleaning raw market data and calculating daily returns. The `mega-fintrade-quant-engine` repository consumes those C++ output files and uses them for strategy generation, backtesting, portfolio equity curve generation, and risk analytics.
+This service downloads and prepares raw market data, consumes cleaned C++ market engine outputs, generates moving-average strategy signals, runs backtests, calculates portfolio and asset-level risk metrics, and exports CSV files for the Java backend.
 
-### Integration Data Flow
+The project is designed as the quantitative analytics layer between `mega-fintrade-market-engine-cpp` and `mega-fintrade-backend-java`.
 
-The `mega-fintrade-quant-engine` repository downloads and normalizes raw market data:
+---
+
+## Project Purpose
+
+The purpose of this project is to provide a production-style Python quantitative analytics engine for a multi-service financial data platform.
+
+In the Mega Fintrade Platform, this project is responsible for:
+
+- Downloading and normalizing raw market data
+- Producing raw market data for `mega-fintrade-market-engine-cpp`
+- Consuming cleaned C++ market engine outputs
+- Building price matrices for strategy analysis
+- Generating trading signals
+- Running backtests
+- Calculating portfolio-level risk metrics
+- Calculating asset-level risk metrics
+- Generating portfolio equity curves
+- Exporting analytics results to CSV for `mega-fintrade-backend-java`
+
+This project demonstrates Python data engineering, quantitative analytics, CSV pipeline integration, testable financial calculations, Docker-based runtime isolation, and multi-service data contracts.
+
+---
+
+## Role in the Mega Fintrade Platform
+
+Mega Fintrade is a multi-language financial data processing and risk monitoring system.
+
+Related repositories:
+
+| Repository / Service | Main Language | Purpose |
+|---|---|---|
+| `mega-fintrade-backend-java` | Java | Backend ETL, storage, reporting, import audit, and REST APIs |
+| `mega-fintrade-quant-engine` | Python | Quantitative analytics, backtesting, strategy signals, and risk metrics |
+| `mega-fintrade-market-engine-cpp` | C++ | High-performance market data cleaning and return calculation |
+| `mega-fintrade-risk-monitor-dotnet` | C# / .NET | Monitoring, alerting, dashboard, and AI-ready integration |
+| Future Mega Fintrade AI Advisor | Python | Optional AI decision-support and alert explanation service |
+
+Intended platform data flow:
+
+    mega-fintrade-quant-engine downloads raw market data
+      ↓
+    mega-fintrade-market-engine-cpp cleans and processes market data
+      ↓
+    mega-fintrade-quant-engine consumes cleaned C++ outputs
+      ↓
+    mega-fintrade-quant-engine generates strategy and risk outputs
+      ↓
+    mega-fintrade-backend-java imports quant outputs
+      ↓
+    mega-fintrade-risk-monitor-dotnet checks backend risk and operational status
+      ↓
+    Future Mega Fintrade AI Advisor may explain alerts and generate risk briefs
+
+---
+
+## Main Responsibilities
+
+`mega-fintrade-quant-engine` performs the following tasks:
+
+1. Downloads raw OHLCV market data.
+2. Normalizes raw market data into a stable CSV format.
+3. Produces `raw_market_data.csv` for `mega-fintrade-market-engine-cpp`.
+4. Consumes `cleaned_market_data.csv` from `mega-fintrade-market-engine-cpp`.
+5. Consumes `daily_returns.csv` from `mega-fintrade-market-engine-cpp`.
+6. Builds symbol-level price data for quantitative analysis.
+7. Generates moving-average crossover strategy signals.
+8. Runs backtests based on generated signals.
+9. Builds portfolio equity curves.
+10. Calculates risk metrics such as cumulative return, volatility, Sharpe ratio, and drawdown.
+11. Exports strategy signals, backtest results, risk metrics, and equity curve data.
+12. Provides test coverage through `pytest`.
+13. Supports integration with `mega-fintrade-backend-java`.
+14. Supports Docker-based test and pipeline execution.
+
+---
+
+## Technology Stack
+
+| Area | Technology |
+|---|---|
+| Language | Python |
+| Data processing | pandas |
+| Numeric computation | numpy |
+| Market data ingestion | yfinance |
+| Visualization / reports | matplotlib |
+| Testing | pytest |
+| Containerization | Docker and Docker Compose |
+| Data format | CSV |
+| CI | GitHub Actions |
+| Version control | Git and GitHub |
+
+---
+
+## Requirements
+
+Project dependencies are listed in:
+
+    requirements.txt
+
+Current dependencies:
+
+    pandas
+    numpy
+    yfinance
+    matplotlib
+    pytest
+
+---
+
+## Repository Structure
+
+    src/
+    tests/
+    data/
+      raw/
+      processed/
+      output/
+    docs/
+    reports/
+    .github/workflows/
+    Dockerfile
+    .dockerignore
+    docker-compose.yml
+    README.md
+    requirements.txt
+    LICENSE
+
+Main folder responsibilities:
+
+| Path | Purpose |
+|---|---|
+| `src/` | Python source code for data ingestion, strategies, backtesting, metrics, and pipeline execution |
+| `tests/` | pytest test suite |
+| `data/raw/` | Raw market data generated by Python ingestion |
+| `data/processed/` | Cleaned C++ outputs copied back into the Python engine |
+| `data/output/` | Quant analytics outputs for Java backend import |
+| `docs/` | Integration, data contract, and Docker documentation |
+| `reports/` | Generated or supporting report files |
+| `.github/workflows/` | GitHub Actions CI configuration |
+| `Dockerfile` | Docker image build definition |
+| `.dockerignore` | Docker build-context ignore rules |
+| `docker-compose.yml` | Docker Compose test and pipeline commands |
+
+---
+
+## Input and Output Data Flow
+
+This project works with both upstream and downstream data contracts.
+
+### Python to C++ input
+
+`mega-fintrade-quant-engine` downloads and normalizes raw market data:
 
     data/raw/raw_market_data.csv
 
-The `mega-fintrade-market-engine-cpp` repository processes the raw market data and produces:
+This file is intended to be consumed by:
+
+    mega-fintrade-market-engine-cpp
+
+Expected raw market data schema:
+
+    symbol,date,open,high,low,close,volume
+
+### C++ to Python input
+
+`mega-fintrade-market-engine-cpp` processes raw market data and produces:
+
+    data/output/cleaned_market_data.csv
+    data/output/daily_returns.csv
+
+Those files are copied into this Python project as:
+
+    data/processed/cleaned_market_data.csv
+    data/processed/daily_returns.csv
+
+### Python to Java output
+
+The analytics pipeline then generates:
+
+    data/output/strategy_signals.csv
+    data/output/backtest_results.csv
+    data/output/risk_metrics.csv
+    data/output/portfolio_equity_curve.csv
+
+These files are intended to be imported by:
+
+    mega-fintrade-backend-java
+
+---
+
+## Integration with mega-fintrade-market-engine-cpp
+
+`mega-fintrade-quant-engine` integrates with the C++ market data processing engine from `mega-fintrade-market-engine-cpp`.
+
+`mega-fintrade-market-engine-cpp` is responsible for cleaning raw market data and calculating daily returns. `mega-fintrade-quant-engine` consumes those C++ output files and uses them for strategy generation, backtesting, portfolio equity curve generation, and risk analytics.
+
+### Integration Data Flow
+
+`mega-fintrade-quant-engine` downloads and normalizes raw market data:
+
+    data/raw/raw_market_data.csv
+
+`mega-fintrade-market-engine-cpp` processes the raw market data and produces:
 
     data/output/cleaned_market_data.csv
     data/output/daily_returns.csv
@@ -20,7 +218,7 @@ Those files are copied into `mega-fintrade-quant-engine`:
     data/processed/cleaned_market_data.csv
     data/processed/daily_returns.csv
 
-The `mega-fintrade-quant-engine` analytics pipeline then produces:
+`mega-fintrade-quant-engine` then produces:
 
     data/output/strategy_signals.csv
     data/output/backtest_results.csv
@@ -44,9 +242,48 @@ The `mega-fintrade-quant-engine` analytics pipeline then produces:
 
     symbol,date,previous_close,current_close,daily_return
 
-### Running the Integrated Analytics Pipeline
+---
 
-After copying the output files from `mega-fintrade-market-engine-cpp` into `mega-fintrade-quant-engine/data/processed`, run:
+## Installation
+
+Create and activate a virtual environment:
+
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+Install dependencies:
+
+    pip install -r requirements.txt
+
+---
+
+## Running Tests Locally
+
+Run the full test suite:
+
+    python3 -m pytest
+
+Expected result:
+
+    all tests pass
+
+The exact number of tests may change as more tests are added.
+
+---
+
+## Running the Integrated Analytics Pipeline Locally
+
+Before running the pipeline, make sure these files exist:
+
+    data/processed/cleaned_market_data.csv
+    data/processed/daily_returns.csv
+
+If `mega-fintrade-market-engine-cpp` is stored beside `mega-fintrade-quant-engine` in the same parent folder, copy the files with:
+
+    cp ../mega-fintrade-market-engine-cpp/data/output/cleaned_market_data.csv data/processed/cleaned_market_data.csv
+    cp ../mega-fintrade-market-engine-cpp/data/output/daily_returns.csv data/processed/daily_returns.csv
+
+Then run:
 
     python3 -m src.run_pipeline
 
@@ -62,15 +299,66 @@ and regenerates:
     data/output/risk_metrics.csv
     data/output/portfolio_equity_curve.csv
 
-### Validating the Integration
+---
+
+## Docker Usage
+
+This project supports Docker-based test and runtime execution.
+
+Docker can be used to build the Python quant engine in a clean Linux container, install dependencies from `requirements.txt`, run the `pytest` test suite, and execute the analytics pipeline without relying on the host machine’s Python environment.
+
+Docker is an additional runtime option. It does not replace the normal local Python virtual environment workflow.
+
+### Build the Docker image
+
+    docker build -t mega-fintrade-quant-engine .
+
+### Run tests inside Docker
+
+    docker compose run --rm quant-engine-tests
+
+### Run the analytics pipeline inside Docker
+
+    docker compose run --rm quant-engine-pipeline
+
+### Required pipeline inputs
+
+Before running the Docker pipeline, make sure these files exist:
+
+    data/processed/cleaned_market_data.csv
+    data/processed/daily_returns.csv
+
+If `mega-fintrade-market-engine-cpp` is stored beside `mega-fintrade-quant-engine` in the same parent folder, copy the files with:
+
+    cp ../mega-fintrade-market-engine-cpp/data/output/cleaned_market_data.csv data/processed/cleaned_market_data.csv
+    cp ../mega-fintrade-market-engine-cpp/data/output/daily_returns.csv data/processed/daily_returns.csv
+
+### Docker pipeline outputs
+
+Generated output files are written to:
+
+    data/output/
+
+Expected output files:
+
+    data/output/strategy_signals.csv
+    data/output/backtest_results.csv
+    data/output/risk_metrics.csv
+    data/output/portfolio_equity_curve.csv
+
+### Docker documentation
+
+For full Docker build, test, run, output verification, cross-platform notes, and troubleshooting instructions, see:
+
+    docs/docker-usage.md
+
+---
+
+## Validating the Integration
 
 Run the full test suite:
 
     python3 -m pytest
-
-Expected result:
-
-    14 passed
 
 Then validate the generated output files:
 
@@ -86,3 +374,75 @@ This confirms that `mega-fintrade-quant-engine` is using both C++ output files f
 
 - `cleaned_market_data.csv` for strategy and backtest generation
 - `daily_returns.csv` for asset-level risk metrics
+
+---
+
+## Output Files for Java Backend
+
+The main outputs for `mega-fintrade-backend-java` are:
+
+| File | Purpose |
+|---|---|
+| `data/output/strategy_signals.csv` | Strategy signal output for Java import |
+| `data/output/backtest_results.csv` | Backtest result output for Java import |
+| `data/output/risk_metrics.csv` | Portfolio and asset-level risk metrics |
+| `data/output/portfolio_equity_curve.csv` | Portfolio equity curve points |
+
+These files are consumed by:
+
+    mega-fintrade-backend-java
+
+---
+
+## CI
+
+This repository uses GitHub Actions.
+
+The CI workflow should install Python dependencies and run the test suite with:
+
+    python3 -m pytest
+
+Docker validation can also be added to CI to confirm the containerized test and pipeline workflow.
+
+---
+
+## Future Improvements
+
+Planned future improvements:
+
+- Generalize the configured symbol universe.
+- Add more strategies beyond moving-average crossover.
+- Add configurable portfolio allocation models.
+- Add transaction cost assumptions.
+- Add richer risk metrics.
+- Add chart generation under `reports/`.
+- Add stronger data contract validation between Python, C++, and Java services.
+- Add Docker validation to GitHub Actions if not already included.
+
+---
+
+## Repository
+
+Repository URL:
+
+    https://github.com/eyebear/mega-fintrade-quant-engine
+
+---
+
+## Author
+
+Developed by Ao Ao Feng.
+
+This project is part of the Mega Fintrade Platform portfolio, a multi-service financial data engineering, quantitative analytics, high-performance market processing, backend ETL, and risk monitoring system built with Java, Python, C++, and C#/.NET.
+
+Repository:
+
+    https://github.com/eyebear/mega-fintrade-quant-engine
+
+---
+
+## License
+
+MIT License
+
+This project is part of a personal portfolio and educational financial engineering system.
