@@ -24,6 +24,9 @@ from src.portfolio import EqualWeightAllocator
 from src.strategies import MovingAverageCrossStrategy
 
 
+BACKEND_STRATEGY_SYMBOL_ORDER = ["AAPL", "MSFT", "GOOGL", "SPY"]
+
+
 def ensure_output_directory() -> None:
     Path("data/output").mkdir(parents=True, exist_ok=True)
 
@@ -36,7 +39,82 @@ def export_strategy_signals(signals: pd.DataFrame, output_path: str) -> None:
             f"{asset}_{field}" for asset, field in flat_signals.columns
         ]
 
-    flat_signals.to_csv(output_path, index=True)
+    flat_signals = flat_signals.reset_index()
+
+    if "index" in flat_signals.columns and "date" not in flat_signals.columns:
+        flat_signals = flat_signals.rename(columns={"index": "date"})
+
+    if "Date" in flat_signals.columns and "date" not in flat_signals.columns:
+        flat_signals = flat_signals.rename(columns={"Date": "date"})
+
+    rename_map: dict[str, str] = {}
+
+    for symbol in BACKEND_STRATEGY_SYMBOL_ORDER:
+        lower_symbol = symbol.lower()
+
+        rename_map[f"{symbol}_close"] = f"{lower_symbol}_close"
+        rename_map[f"{symbol}_short_ma"] = f"{lower_symbol}_sma_short"
+        rename_map[f"{symbol}_long_ma"] = f"{lower_symbol}_sma_long"
+        rename_map[f"{symbol}_signal"] = f"{lower_symbol}_signal"
+
+        rename_map[f"{symbol}_sma_short"] = f"{lower_symbol}_sma_short"
+        rename_map[f"{symbol}_sma_long"] = f"{lower_symbol}_sma_long"
+
+        rename_map[f"{lower_symbol}_close"] = f"{lower_symbol}_close"
+        rename_map[f"{lower_symbol}_short_ma"] = f"{lower_symbol}_sma_short"
+        rename_map[f"{lower_symbol}_long_ma"] = f"{lower_symbol}_sma_long"
+        rename_map[f"{lower_symbol}_signal"] = f"{lower_symbol}_signal"
+
+    flat_signals = flat_signals.rename(columns=rename_map)
+
+    expected_columns = ["date"]
+
+    for symbol in BACKEND_STRATEGY_SYMBOL_ORDER:
+        lower_symbol = symbol.lower()
+        expected_columns.extend(
+            [
+                f"{lower_symbol}_close",
+                f"{lower_symbol}_sma_short",
+                f"{lower_symbol}_sma_long",
+                f"{lower_symbol}_signal",
+            ]
+        )
+
+    missing_columns = [
+        column for column in expected_columns if column not in flat_signals.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            "strategy_signals.csv is missing required backend columns: "
+            + ", ".join(missing_columns)
+        )
+
+    backend_signals = flat_signals[expected_columns].copy()
+
+    numeric_columns = [column for column in expected_columns if column != "date"]
+
+    for column in numeric_columns:
+        backend_signals[column] = pd.to_numeric(backend_signals[column], errors="coerce")
+
+    before_drop_count = len(backend_signals)
+
+    backend_signals = backend_signals.dropna(subset=numeric_columns)
+
+    after_drop_count = len(backend_signals)
+    dropped_count = before_drop_count - after_drop_count
+
+    if backend_signals.empty:
+        raise ValueError(
+            "strategy_signals.csv has no complete rows after removing rows with missing moving average values."
+        )
+
+    backend_signals.to_csv(output_path, index=False)
+
+    print(
+        "Prepared backend-compatible strategy signals. "
+        f"Dropped {dropped_count} rows with incomplete moving average values."
+    )
 
 
 def export_backtest_results(detail: pd.DataFrame, output_path: str) -> None:

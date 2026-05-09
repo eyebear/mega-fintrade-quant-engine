@@ -1,13 +1,3 @@
-# Phase 10.3 — Docker Compose
-# Mega Fintrade Quant Engine
-#
-# This Compose file provides repeatable commands for:
-# - running the pytest test suite
-# - running the integrated analytics pipeline
-#
-# Local folders are mounted into the container so generated output files
-# remain available on the host machine after the container exits.
-
 services:
   quant-engine-tests:
     container_name: mega-fintrade-quant-engine-tests
